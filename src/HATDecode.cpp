@@ -15,6 +15,9 @@ void HATDecoder::decode() {
     HATHeader header;
     readHATHeader(inputFile, header);
 
+    TrackInfo trackInfo;
+    readTrackInfo(inputFile, trackInfo);
+
     std::vector<int16_t> compressedData(header.length);
     inputFile.read(reinterpret_cast<char*>(compressedData.data()), header.length * sizeof(int16_t));
     
@@ -37,6 +40,23 @@ void HATDecoder::readHATHeader(std::ifstream& inputFile, HATHeader& header) {
     inputFile.read(reinterpret_cast<char*>(&header.sampleRate), sizeof(header.sampleRate));
     inputFile.read(reinterpret_cast<char*>(&header.bitRate), sizeof(header.bitRate));
     inputFile.read(reinterpret_cast<char*>(&header.length), sizeof(header.length));
+}
+
+void HATDecoder::readTrackInfo(std::ifstream& inputFile, TrackInfo& trackInfo) {
+    // Assuming the metadata is stored as fixed length strings for simplicity
+    char artist[256];
+    inputFile.read(artist, sizeof(artist));
+    trackInfo.artist = std::string(artist);
+
+    char description[256];
+    inputFile.read(description, sizeof(description));
+    trackInfo.description = std::string(description);
+
+    char trackName[256];
+    inputFile.read(trackName, sizeof(trackName));
+    trackInfo.trackName = std::string(trackName);
+
+    inputFile.read(reinterpret_cast<char*>(&trackInfo.trackNumber), sizeof(trackInfo.trackNumber));
 }
 
 std::vector<int16_t> HATDecoder::decompressData(const std::vector<int16_t>& compressedData, float compressionRatio) {

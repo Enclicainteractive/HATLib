@@ -15,6 +15,7 @@ private:
     std::vector<int16_t> audioData;
 
     void readHATHeader(std::ifstream& inputFile, HATHeader& header);
+    void readTrackInfo(std::ifstream& inputFile, TrackInfo& trackInfo);
     std::vector<int16_t> decompressData(const std::vector<int16_t>& compressedData, float compressionRatio);
 };
 

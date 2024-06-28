@@ -1,6 +1,16 @@
 #ifndef HATFORMAT_H
 #define HATFORMAT_H
 
+#ifdef _WIN32
+    #ifdef HATLIB_EXPORTS
+        #define HATLIB_API __declspec(dllexport)
+    #else
+        #define HATLIB_API __declspec(dllimport)
+    #endif
+#else
+    #define HATLIB_API
+#endif
+
 #include <string>
 #include <vector>
 #include <cstdint>
@@ -13,7 +23,7 @@ enum CompressionMethod {
     LOSSLESS
 };
 
-struct HATHeader {
+struct HATLIB_API HATHeader {
     std::string version;
     int channels;
     float spatialData[3]; // x, y, z
@@ -25,7 +35,7 @@ struct HATHeader {
     int length;
 };
 
-struct TrackInfo {
+struct HATLIB_API TrackInfo {
     std::string artist;
     std::string description;
     std::string trackName;
@@ -33,12 +43,12 @@ struct TrackInfo {
     int seekMarker;
 };
 
-struct CompressionDataMarker {
+struct HATLIB_API CompressionDataMarker {
     int position;
     int length;
 };
 
 // Functions for handling HAT format (if any)
-void printHATHeader(const HATHeader& header);
+HATLIB_API void printHATHeader(const HATHeader& header);
 
 #endif // HATFORMAT_H

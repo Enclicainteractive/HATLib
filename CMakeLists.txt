@@ -13,11 +13,22 @@ set(SOURCES
     src/HATDecode.cpp
 )
 
-# Create a static library
-add_library(HATLib STATIC ${SOURCES})
+# Create a shared library (DLL)
+add_library(HATLib SHARED ${SOURCES})
 
-# Optionally create a shared library
-# add_library(HATLib SHARED ${SOURCES})
+# Define export macro for Windows
+if(WIN32)
+    target_compile_definitions(HATLib PRIVATE HATLIB_EXPORTS)
+endif()
 
 # Include directories for public headers
 target_include_directories(HATLib PUBLIC include)
+
+# Installation rules
+install(TARGETS HATLib
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
+
+install(DIRECTORY include/ DESTINATION include)

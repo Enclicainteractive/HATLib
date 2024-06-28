@@ -3,8 +3,8 @@
 #include <iostream>
 #include <unordered_map>
 
-HATEncoder::HATEncoder(const std::string& inputFilePath, const std::string& outputFilePath)
-    : inputFilePath(inputFilePath), outputFilePath(outputFilePath) {}
+HATEncoder::HATEncoder(const std::string& inputFilePath, const std::string& outputFilePath, int sampleRate, int bitRate, int audioChannels, const std::unordered_map<std::string, std::string>& metadata)
+    : inputFilePath(inputFilePath), outputFilePath(outputFilePath), sampleRate(sampleRate), bitRate(bitRate), audioChannels(audioChannels), metadata(metadata) {}
 
 void HATEncoder::encode() {
     std::ifstream inputFile(inputFilePath, std::ios::binary);
@@ -21,16 +21,30 @@ void HATEncoder::encode() {
     header.spatialData[0] = 0.0f;
     header.spatialData[1] = 0.0f;
     header.spatialData[2] = 0.0f;
-    header.compressionRatio = 0.5f;  // Example ratio for testing
+    header.compressionRatio = 0.5f;
     header.compressionMethod = LOSSLESS;
     header.tracks = 1;
     header.sampleRate = sampleRate;
     header.bitRate = bitRate;
     header.length = audioData.size();
 
+    TrackInfo trackInfo;
+    if (metadata.find("artist") != metadata.end()) {
+        trackInfo.artist = metadata.at("artist");
+    }
+    if (metadata.find("description") != metadata.end()) {
+        trackInfo.description = metadata.at("description");
+    }
+    if (metadata.find("trackName") != metadata.end()) {
+        trackInfo.trackName = metadata.at("trackName");
+    }
+    if (metadata.find("trackNumber") != metadata.end()) {
+        trackInfo.trackNumber = std::stoi(metadata.at("trackNumber"));
+    }
+
     std::vector<int16_t> compressedData = compressData(audioData, header.compressionRatio);
     
-    writeHATFile(header, compressedData);
+    writeHATFile(header, trackInfo, compressedData);
 
     inputFile.close();
 }
@@ -84,7 +98,7 @@ std::vector<int16_t> HATEncoder::compressData(const std::vector<int16_t>& data, 
     return compressedData;
 }
 
-void HATEncoder::writeHATFile(const HATHeader& header, const std::vector<int16_t>& compressedData) {
+void HATEncoder::writeHATFile(const HATHeader& header, const TrackInfo& trackInfo, const std::vector<int16_t>& compressedData) {
     std::ofstream outputFile(outputFilePath, std::ios::binary);
     if (!outputFile.is_open()) {
         std::cerr << "Error opening output file." << std::endl;
@@ -100,6 +114,12 @@ void HATEncoder::writeHATFile(const HATHeader& header, const std::vector<int16_t
     outputFile.write(reinterpret_cast<const char*>(&header.sampleRate), sizeof(header.sampleRate));
     outputFile.write(reinterpret_cast<const char*>(&header.bitRate), sizeof(header.bitRate));
     outputFile.write(reinterpret_cast<const char*>(&header.length), sizeof(header.length));
+
+   
+    outputFile.write(trackInfo.artist.c_str(), trackInfo.artist.size());
+    outputFile.write(trackInfo.description.c_str(), trackInfo.description.size());
+    outputFile.write(trackInfo.trackName.c_str(), trackInfo.trackName.size());
+    outputFile.write(reinterpret_cast<const char*>(&trackInfo.trackNumber), sizeof(trackInfo.trackNumber));
 
     outputFile.write(reinterpret_cast<const char*>(compressedData.data()), compressedData.size() * sizeof(int16_t));
 

@@ -1,0 +1,44 @@
+# Compiled source files
+*.o
+*.a
+*.so
+
+# Executable files
+*.out
+*.exe
+*.dll
+
+# Libraries
+*.lib
+
+# Build directories
+/build
+/build/*
+
+# CMake files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Generated files
+*.log
+*.tmp
+*.bak
+*.swp
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Python virtual environments
+venv/
+__pycache__/
+
+# Miscellaneous
+*.class
+*.pyc
+build.ninja
+.ninja_log
+.ninja_deps
