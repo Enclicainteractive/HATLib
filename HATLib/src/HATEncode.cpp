@@ -1,22 +1,16 @@
 #include "HATEncode.h"
+#include "dr_wav.h"
 #include <fstream>
 #include <iostream>
-#include <unordered_map>
 
 HATEncoder::HATEncoder(const std::string& inputFilePath, const std::string& outputFilePath, int sampleRate, int bitRate, int audioChannels, const std::unordered_map<std::string, std::string>& metadata)
     : inputFilePath(inputFilePath), outputFilePath(outputFilePath), sampleRate(sampleRate), bitRate(bitRate), audioChannels(audioChannels), metadata(metadata) {}
 
 void HATEncoder::encode() {
-    std::ifstream inputFile(inputFilePath, std::ios::binary);
-    if (!inputFile.is_open()) {
-        std::cerr << "Error opening input file." << std::endl;
-        return;
-    }
-
-    readWavFile(inputFile);
+    readWavFile();
 
     HATHeader header;
-    header.version = HAT_VERSION;
+    header.version = "1.0";
     header.channels = audioChannels;
     header.spatialData[0] = 0.0f;
     header.spatialData[1] = 0.0f;
@@ -29,51 +23,45 @@ void HATEncoder::encode() {
     header.length = audioData.size();
 
     TrackInfo trackInfo;
-    if (metadata.find("artist") != metadata.end()) {
-        trackInfo.artist = metadata.at("artist");
-    }
-    if (metadata.find("description") != metadata.end()) {
-        trackInfo.description = metadata.at("description");
-    }
-    if (metadata.find("trackName") != metadata.end()) {
-        trackInfo.trackName = metadata.at("trackName");
-    }
-    if (metadata.find("trackNumber") != metadata.end()) {
-        trackInfo.trackNumber = std::stoi(metadata.at("trackNumber"));
-    }
+    trackInfo.artist = metadata.at("artist");
+    trackInfo.description = "";  // Assuming description is empty for simplicity
+    trackInfo.trackName = "";  // Assuming track name is empty for simplicity
+    trackInfo.trackNumber = 1;  // Assuming single track
 
     std::vector<int16_t> compressedData = compressData(audioData, header.compressionRatio);
-    
-    writeHATFile(header, trackInfo, compressedData);
 
-    inputFile.close();
+    writeHATFile(header, trackInfo, compressedData);
 }
 
-void HATEncoder::readWavFile(std::ifstream& inputFile) {
-    // Simplified WAV file reading
-    inputFile.seekg(24);
-    inputFile.read(reinterpret_cast<char*>(&sampleRate), sizeof(sampleRate));
-    inputFile.seekg(34);
-    inputFile.read(reinterpret_cast<char*>(&bitRate), sizeof(bitRate));
-    inputFile.seekg(22);
-    inputFile.read(reinterpret_cast<char*>(&audioChannels), sizeof(audioChannels));
-
-    inputFile.seekg(44); // Skip the header
-    int16_t sample;
-    while (inputFile.read(reinterpret_cast<char*>(&sample), sizeof(sample))) {
-        audioData.push_back(sample);
+void HATEncoder::readWavFile() {
+    drwav wav;
+    if (!drwav_init_file(&wav, inputFilePath.c_str(), NULL)) {
+        std::cerr << "Error: Failed to open WAV file. Possible reasons:" << std::endl;
+        std::cerr << "1. The file is not a valid WAV file." << std::endl;
+        std::cerr << "2. The file is corrupted." << std::endl;
+        std::cerr << "3. The file is not readable due to permissions." << std::endl;
+        return;
     }
+
+    sampleRate = wav.sampleRate;
+    bitRate = wav.bitsPerSample * wav.channels * wav.sampleRate;
+    audioChannels = wav.channels;
+
+    // Read PCM frames
+    audioData.resize(wav.totalPCMFrameCount * wav.channels);
+    drwav_read_pcm_frames_s16(&wav, wav.totalPCMFrameCount, audioData.data());
+
+    drwav_uninit(&wav);
 }
 
 std::vector<int16_t> HATEncoder::compressData(const std::vector<int16_t>& data, float compressionRatio) {
     std::vector<int16_t> compressedData;
-    size_t maxPatternSize = static_cast<size_t>(10 * compressionRatio); // Example: max pattern size based on ratio
+    size_t maxPatternSize = static_cast<size_t>(10 * compressionRatio);
 
     size_t i = 0;
     while (i < data.size()) {
         size_t patternSize = 1;
 
-        // Detect pattern size
         while (i + patternSize < data.size() && patternSize < maxPatternSize) {
             bool isPattern = true;
             for (size_t j = 0; j < patternSize; ++j) {
@@ -88,9 +76,8 @@ std::vector<int16_t> HATEncoder::compressData(const std::vector<int16_t>& data, 
             ++patternSize;
         }
 
-        // Compress pattern
-        compressedData.push_back(patternSize); // Length of the pattern
-        compressedData.push_back(data[i]);     // Pattern value
+        compressedData.push_back(patternSize);
+        compressedData.push_back(data[i]);
 
         i += patternSize;
     }
@@ -105,7 +92,7 @@ void HATEncoder::writeHATFile(const HATHeader& header, const TrackInfo& trackInf
         return;
     }
 
-    outputFile.write(header.version.c_str(), header.version.size());
+    outputFile.write(header.version.c_str(), 4);
     outputFile.write(reinterpret_cast<const char*>(&header.channels), sizeof(header.channels));
     outputFile.write(reinterpret_cast<const char*>(header.spatialData), sizeof(header.spatialData));
     outputFile.write(reinterpret_cast<const char*>(&header.compressionRatio), sizeof(header.compressionRatio));
@@ -115,10 +102,9 @@ void HATEncoder::writeHATFile(const HATHeader& header, const TrackInfo& trackInf
     outputFile.write(reinterpret_cast<const char*>(&header.bitRate), sizeof(header.bitRate));
     outputFile.write(reinterpret_cast<const char*>(&header.length), sizeof(header.length));
 
-   
-    outputFile.write(trackInfo.artist.c_str(), trackInfo.artist.size());
-    outputFile.write(trackInfo.description.c_str(), trackInfo.description.size());
-    outputFile.write(trackInfo.trackName.c_str(), trackInfo.trackName.size());
+    outputFile.write(trackInfo.artist.c_str(), 256);  // Assuming fixed length for simplicity
+    outputFile.write(trackInfo.description.c_str(), 256);  // Assuming fixed length for simplicity
+    outputFile.write(trackInfo.trackName.c_str(), 256);  // Assuming fixed length for simplicity
     outputFile.write(reinterpret_cast<const char*>(&trackInfo.trackNumber), sizeof(trackInfo.trackNumber));
 
     outputFile.write(reinterpret_cast<const char*>(compressedData.data()), compressedData.size() * sizeof(int16_t));

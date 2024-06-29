@@ -21,8 +21,11 @@ int main(int argc, char* argv[]) {
     }
 
     int sampleRate = wav.sampleRate;
-    int bitRate = wav.bitsPerSample * wav.channels * wav.sampleRate;
     int audioChannels = wav.channels;
+    int bitsPerSample = wav.bitsPerSample;
+    int byteRate = wav.dataChunkDataSize / wav.totalPCMFrameCount;
+
+    int bitRate = byteRate * 8 / 1000; // bit rate in kbps
 
     std::unordered_map<std::string, std::string> metadata;
     metadata["artist"] = artist;

@@ -18,9 +18,10 @@ private:
     int bitRate;
     int audioChannels;
     std::unordered_map<std::string, std::string> metadata;
+
     std::vector<int16_t> audioData;
 
-    void readWavFile(std::ifstream& inputFile);
+    void readWavFile();
     std::vector<int16_t> compressData(const std::vector<int16_t>& data, float compressionRatio);
     void writeHATFile(const HATHeader& header, const TrackInfo& trackInfo, const std::vector<int16_t>& compressedData);
 };

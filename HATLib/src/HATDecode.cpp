@@ -39,7 +39,6 @@ void HATDecoder::readHATHeader(std::ifstream& inputFile, HATHeader& header) {
 }
 
 void HATDecoder::readTrackInfo(std::ifstream& inputFile, TrackInfo& trackInfo) {
-    // Assuming the metadata is stored as fixed length strings for simplicity
     char artist[256];
     inputFile.read(artist, sizeof(artist));
     trackInfo.artist = std::string(artist);
