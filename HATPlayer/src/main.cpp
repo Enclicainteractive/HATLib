@@ -31,6 +31,7 @@ void printHeaderInfo(const HATDecoder& decoder) {
     std::cout << "Tracks: " << decoder.getTracks() << std::endl;
     std::cout << "Sample Rate: " << decoder.getSampleRate() << std::endl;
     std::cout << "Bit Rate: " << decoder.getBitRate() << std::endl;
+    std::cout << "Length: " << decoder.getAudioData().size() << std::endl;
 }
 
 void printTrackInfo(const HATDecoder& decoder) {
@@ -73,8 +74,9 @@ int main(int argc, char* argv[]) {
 
     deviceConfig = ma_device_config_init(ma_device_type_playback);
     deviceConfig.playback.format = ma_format_s16;
-    deviceConfig.playback.channels = 1; // Adjust based on your audio data
-    deviceConfig.sampleRate = decoder.getSampleRate(); // Set this to your sample rate
+    deviceConfig.playback.channels = decoder.getChannels();
+    deviceConfig.sampleRate = decoder.getSampleRate(); // Adjust based on your audio data
+
     deviceConfig.dataCallback = data_callback;
     deviceConfig.pUserData = const_cast<std::vector<int16_t>*>(&audioData);
 

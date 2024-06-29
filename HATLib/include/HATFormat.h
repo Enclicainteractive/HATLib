@@ -33,6 +33,8 @@ struct HATLIB_API HATHeader {
     int sampleRate;
     int bitRate;
     int length;
+
+    
 };
 
 struct HATLIB_API TrackInfo {
@@ -41,6 +43,7 @@ struct HATLIB_API TrackInfo {
     std::string trackName;
     int trackNumber;
     int seekMarker;
+
 };
 
 struct HATLIB_API CompressionDataMarker {

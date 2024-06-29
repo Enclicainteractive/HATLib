@@ -2,6 +2,8 @@
 #include "dr_wav.h"
 #include <fstream>
 #include <iostream>
+#include <zlib.h>
+#include "HATFormat.h"
 
 HATEncoder::HATEncoder(const std::string& inputFilePath, const std::string& outputFilePath, int sampleRate, int bitRate, int audioChannels, const std::unordered_map<std::string, std::string>& metadata)
     : inputFilePath(inputFilePath), outputFilePath(outputFilePath), sampleRate(sampleRate), bitRate(bitRate), audioChannels(audioChannels), metadata(metadata) {}
@@ -10,12 +12,11 @@ void HATEncoder::encode() {
     readWavFile();
 
     HATHeader header;
-    header.version = "1.0";
+    header.version = HAT_VERSION;
     header.channels = audioChannels;
     header.spatialData[0] = 0.0f;
     header.spatialData[1] = 0.0f;
     header.spatialData[2] = 0.0f;
-    header.compressionRatio = 0.5f;
     header.compressionMethod = LOSSLESS;
     header.tracks = 1;
     header.sampleRate = sampleRate;
@@ -28,7 +29,8 @@ void HATEncoder::encode() {
     trackInfo.trackName = "";  // Assuming track name is empty for simplicity
     trackInfo.trackNumber = 1;  // Assuming single track
 
-    std::vector<int16_t> compressedData = compressData(audioData, header.compressionRatio);
+    std::vector<uint8_t> compressedData = compressData(audioData, header.compressionRatio);
+    header.compressionRatio = static_cast<float>(audioData.size() * sizeof(int16_t)) / static_cast<float>(compressedData.size());
 
     writeHATFile(header, trackInfo, compressedData);
 }
@@ -54,38 +56,21 @@ void HATEncoder::readWavFile() {
     drwav_uninit(&wav);
 }
 
-std::vector<int16_t> HATEncoder::compressData(const std::vector<int16_t>& data, float compressionRatio) {
-    std::vector<int16_t> compressedData;
-    size_t maxPatternSize = static_cast<size_t>(10 * compressionRatio);
+std::vector<uint8_t> HATEncoder::compressData(const std::vector<int16_t>& data, float& compressionRatio) {
+    uLongf compressedSize = compressBound(data.size() * sizeof(int16_t));
+    std::vector<uint8_t> compressedData(compressedSize);
 
-    size_t i = 0;
-    while (i < data.size()) {
-        size_t patternSize = 1;
-
-        while (i + patternSize < data.size() && patternSize < maxPatternSize) {
-            bool isPattern = true;
-            for (size_t j = 0; j < patternSize; ++j) {
-                if (data[i + j] != data[i + patternSize + j]) {
-                    isPattern = false;
-                    break;
-                }
-            }
-            if (!isPattern) {
-                break;
-            }
-            ++patternSize;
-        }
-
-        compressedData.push_back(patternSize);
-        compressedData.push_back(data[i]);
-
-        i += patternSize;
+    if (compress(compressedData.data(), &compressedSize, reinterpret_cast<const Bytef*>(data.data()), data.size() * sizeof(int16_t)) != Z_OK) {
+        std::cerr << "Compression failed!" << std::endl;
+        return {};
     }
 
+    compressedData.resize(compressedSize);
+    compressionRatio = static_cast<float>(data.size() * sizeof(int16_t)) / static_cast<float>(compressedSize);
     return compressedData;
 }
 
-void HATEncoder::writeHATFile(const HATHeader& header, const TrackInfo& trackInfo, const std::vector<int16_t>& compressedData) {
+void HATEncoder::writeHATFile(const HATHeader& header, const TrackInfo& trackInfo, const std::vector<uint8_t>& compressedData) {
     std::ofstream outputFile(outputFilePath, std::ios::binary);
     if (!outputFile.is_open()) {
         std::cerr << "Error opening output file." << std::endl;
@@ -102,12 +87,14 @@ void HATEncoder::writeHATFile(const HATHeader& header, const TrackInfo& trackInf
     outputFile.write(reinterpret_cast<const char*>(&header.bitRate), sizeof(header.bitRate));
     outputFile.write(reinterpret_cast<const char*>(&header.length), sizeof(header.length));
 
-    outputFile.write(trackInfo.artist.c_str(), 256);  // Assuming fixed length for simplicity
-    outputFile.write(trackInfo.description.c_str(), 256);  // Assuming fixed length for simplicity
-    outputFile.write(trackInfo.trackName.c_str(), 256);  // Assuming fixed length for simplicity
+    outputFile.write(trackInfo.artist.c_str(), 256);  
+    outputFile.write(trackInfo.description.c_str(), 256);  
+    outputFile.write(trackInfo.trackName.c_str(), 256);  
     outputFile.write(reinterpret_cast<const char*>(&trackInfo.trackNumber), sizeof(trackInfo.trackNumber));
 
-    outputFile.write(reinterpret_cast<const char*>(compressedData.data()), compressedData.size() * sizeof(int16_t));
+    outputFile.write(reinterpret_cast<const char*>(compressedData.data()), compressedData.size());
+
+    outputFile.write("HATEOF", 6);
 
     outputFile.close();
 }

@@ -1,6 +1,8 @@
 #include "HATDecode.h"
 #include <fstream>
 #include <iostream>
+#include <zlib.h>
+#include "HATFormat.h"
 
 HATDecoder::HATDecoder(const std::string& inputFilePath)
     : inputFilePath(inputFilePath) {}
@@ -15,10 +17,10 @@ void HATDecoder::decode() {
     readHATHeader(inputFile, header);
     readTrackInfo(inputFile, trackInfo);
 
-    std::vector<int16_t> compressedData(header.length);
-    inputFile.read(reinterpret_cast<char*>(compressedData.data()), header.length * sizeof(int16_t));
-    
-    audioData = decompressData(compressedData, header.compressionRatio);
+    std::vector<uint8_t> compressedData(header.length);
+    inputFile.read(reinterpret_cast<char*>(compressedData.data()), compressedData.size());
+
+    audioData = decompressData(compressedData, header.length);
 
     inputFile.close();
 }
@@ -36,6 +38,13 @@ void HATDecoder::readHATHeader(std::ifstream& inputFile, HATHeader& header) {
     inputFile.read(reinterpret_cast<char*>(&header.sampleRate), sizeof(header.sampleRate));
     inputFile.read(reinterpret_cast<char*>(&header.bitRate), sizeof(header.bitRate));
     inputFile.read(reinterpret_cast<char*>(&header.length), sizeof(header.length));
+
+    char eof[6];
+    inputFile.read(eof, 6);
+    if (std::string(eof, 6) != "HATEOF") {
+        std::cerr << "Error: Invalid HAT file." << std::endl;
+        return;
+    }
 }
 
 void HATDecoder::readTrackInfo(std::ifstream& inputFile, TrackInfo& trackInfo) {
@@ -54,18 +63,15 @@ void HATDecoder::readTrackInfo(std::ifstream& inputFile, TrackInfo& trackInfo) {
     inputFile.read(reinterpret_cast<char*>(&trackInfo.trackNumber), sizeof(trackInfo.trackNumber));
 }
 
-std::vector<int16_t> HATDecoder::decompressData(const std::vector<int16_t>& compressedData, float compressionRatio) {
-    std::vector<int16_t> decompressedData;
-    size_t i = 0;
+std::vector<int16_t> HATDecoder::decompressData(const std::vector<uint8_t>& compressedData, size_t originalSize) {
+    uLongf decompressedSize = originalSize * sizeof(int16_t);
+    std::vector<int16_t> decompressedData(decompressedSize / sizeof(int16_t));
 
-    while (i < compressedData.size()) {
-        int16_t patternLength = compressedData[i++];
-        int16_t patternValue = compressedData[i++];
-
-        for (int j = 0; j < patternLength; ++j) {
-            decompressedData.push_back(patternValue);
-        }
+    if (uncompress(reinterpret_cast<Bytef*>(decompressedData.data()), &decompressedSize, compressedData.data(), compressedData.size()) != Z_OK) {
+        std::cerr << "Decompression failed!" << std::endl;
+        return {};
     }
 
+    decompressedData.resize(decompressedSize / sizeof(int16_t));
     return decompressedData;
 }

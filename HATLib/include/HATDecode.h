@@ -25,7 +25,7 @@ public:
 
     void readHATHeader(std::ifstream& inputFile, HATHeader& header);
     void readTrackInfo(std::ifstream& inputFile, TrackInfo& trackInfo);
-    std::vector<int16_t> decompressData(const std::vector<int16_t>& compressedData, float compressionRatio);
+    std::vector<int16_t> decompressData(const std::vector<uint8_t>& compressedData, size_t dataSize);
 
 private:
     std::string inputFilePath;
