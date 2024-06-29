@@ -12,10 +12,7 @@ void HATDecoder::decode() {
         return;
     }
 
-    HATHeader header;
     readHATHeader(inputFile, header);
-
-    TrackInfo trackInfo;
     readTrackInfo(inputFile, trackInfo);
 
     std::vector<int16_t> compressedData(header.length);
@@ -27,7 +24,6 @@ void HATDecoder::decode() {
 }
 
 void HATDecoder::readHATHeader(std::ifstream& inputFile, HATHeader& header) {
-    // Read the version string (assume fixed length for simplicity)
     char version[4];
     inputFile.read(version, 4);
     header.version = std::string(version, 4);
