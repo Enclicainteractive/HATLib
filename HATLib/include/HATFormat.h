@@ -43,6 +43,7 @@ struct HATLIB_API TrackInfo {
     std::string trackName;
     int trackNumber;
     int seekMarker;
+    int datalength;
 
 };
 
