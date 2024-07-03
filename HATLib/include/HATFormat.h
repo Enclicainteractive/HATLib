@@ -1,58 +1,40 @@
 #ifndef HATFORMAT_H
 #define HATFORMAT_H
 
-#ifdef _WIN32
-    #ifdef HATLIB_EXPORTS
-        #define HATLIB_API __declspec(dllexport)
-    #else
-        #define HATLIB_API __declspec(dllimport)
-    #endif
-#else
-    #define HATLIB_API
-#endif
-
 #include <string>
 #include <vector>
-#include <cstdint>
+#include <unordered_map>
+#include <cstdint> // Ensure this is included
 
 const std::string HAT_VERSION = "1.0";
-const int MAX_CHANNELS = 32;
 
 enum CompressionMethod {
-    NONE,
     LOSSLESS
 };
 
-struct HATLIB_API HATHeader {
+struct HATHeader {
     std::string version;
-    int channels;
-    float spatialData[3]; // x, y, z
+    uint8_t channels;
+    float spatialData[3];
     float compressionRatio;
     CompressionMethod compressionMethod;
-    int tracks;
-    int sampleRate;
-    int bitRate;
-    int length;
-
-    
+    uint8_t tracks;
+    uint32_t sampleRate;
+    uint32_t bitRate;
+    uint32_t length;
+    uint32_t datalength;
 };
 
-struct HATLIB_API TrackInfo {
+struct TrackInfo {
     std::string artist;
     std::string description;
     std::string trackName;
-    int trackNumber;
-    int seekMarker;
-    int datalength;
-
+    int32_t trackNumber;
+    uint32_t seekMarker;
 };
 
-struct HATLIB_API CompressionDataMarker {
-    int position;
-    int length;
-};
+uint16_t calculateChecksum(const std::vector<uint8_t>& data);
+std::vector<uint8_t> compressData(const std::vector<int16_t>& data, float& compressionRatio);
+std::vector<int16_t> decompressData(const std::vector<uint8_t>& compressedData, size_t dataSize);
 
-// Functions for handling HAT format (if any)
-HATLIB_API void printHATHeader(const HATHeader& header);
-
-#endif // HATFORMAT_H
+#endif

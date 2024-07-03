@@ -18,12 +18,12 @@ The HAT file format is designed to support advanced audio features, including mu
 | COMPRESSION_DATA_MARKERS   | Array of structs      | Marks where data is compressed and what needs to be restored.                                         |
 | SEEKMARKER                 | Integer (4 bytes)     | Position in the audio where seeking is enabled.                                                       |
 | ARTIST_DATA                | Struct                | Optional. Includes channel art, artist name, and description.                                          |
-| DATA_LENGTH                | Interger (4 bytes)    | Used for decompression of the data required for decompression                                         |
+| DATA_LENGTH                | Integer (4 bytes)     | Used for decompression of the data required for decompression                                         |
 | TRACK_NAME                 | String                | Optional. Name of the track, album, track number, etc.                                                 |
 | TRACKNUMBER                | Integer (4 bytes)     | If there are multiple tracks, this indicates the track number.                                         |
 | START OF HAT SAMPLE AUDIO TRACK DATA | Marker       | Indicates the start of the audio track data.                                                           |
 | END OF AUDIO TRACK DATA    | Marker                | Marks the end of the audio track data.                                                                |
-| HATEOF                     | Marker                | Indicates the end of the HAT file.                                                                    |
+| HATEOF                     | Marker                | Indicates the end of the HAT file.                                                                    |                                                                  |
 
 ### Field Descriptions
 

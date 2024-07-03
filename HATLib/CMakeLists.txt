@@ -4,26 +4,23 @@ project(HATLib)
 
 set(CMAKE_CXX_STANDARD 11)
 
-# Find zlib
-find_package(ZLIB REQUIRED)
-
 # Include directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../lib)
-include_directories(${ZLIB_INCLUDE_DIRS})
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}../lib/lz4/lib)
 
 # Source files
 set(SOURCES
     src/HATFormat.cpp
     src/HATEncode.cpp
     src/HATDecode.cpp
+    ../lib/lz4/lib/lz4.c
+    ../lib/lz4/lib/lz4hc.c
 )
 
 # Create static library
 add_library(HATLib STATIC ${SOURCES})
-
-# Link zlib
-target_link_libraries(HATLib ${ZLIB_LIBRARIES})
 
 # Installation rules
 install(TARGETS HATLib
