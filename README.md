@@ -170,5 +170,3 @@ To build the projects, follow these steps:
    make
    cd ..
    ```
-
-This setup provides a comprehensive overview and detailed specifications for the HAT (Helix Audio Transform) file format, ensuring users and developers understand the structure and usage of the format.
