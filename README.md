@@ -26,7 +26,7 @@ The HAT file format is designed to support advanced audio features, including mu
 | TRACKNUMBER                | Integer (4 bytes)     | If there are multiple tracks, this indicates the track number.                                         |
 | START OF HAT SAMPLE AUDIO TRACK DATA | Marker       | Indicates the start of the audio track data.                                                           |
 | END OF AUDIO TRACK DATA    | Marker                | Marks the end of the audio track data.                                                                |
-| HATEOF                     | Marker                | Indicates the end of the HAT file.                                                                    |                                                                  |
+| HATEOF                     | Marker                | Indicates the end of the HAT file.(Invalidated now)                                                            |                                                                  |
 
 ### Field Descriptions
 
