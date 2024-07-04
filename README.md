@@ -1,5 +1,8 @@
 # HAT Format (Helix Audio Transform) Specification
 
+![HAT logo](https://github.com/Enclicainteractive/HATLib/blob/main/Asset/images/Helix%20Audio%20Transform%20logo_light.png?raw=true)
+
+
 The HAT file format is designed to support advanced audio features, including multi-channel audio, 3D spatial data, and efficient lossless compression. Below is a detailed specification of the HAT format.
 
 ## HAT File Format Specifications
